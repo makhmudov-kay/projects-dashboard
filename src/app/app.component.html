@@ -1,0 +1,18 @@
+<nz-layout class="h-dvh">
+  <nz-header class="flex flex-row items-center">
+    <div class="container m-auto">
+      <h2 class="text-2xl text-white font-medium cursor-pointer" routerLink="/">
+        Dashboard Panel
+      </h2>
+    </div>
+  </nz-header>
+  <nz-content class="container m-auto">
+    @if($projects | async; as projects) {
+    <router-outlet></router-outlet>
+    }@else {
+    <div class="flex w-full h-full items-center justify-center">
+      <nz-spin nzSimple nzSize="large"></nz-spin>
+    </div>
+    }
+  </nz-content>
+</nz-layout>

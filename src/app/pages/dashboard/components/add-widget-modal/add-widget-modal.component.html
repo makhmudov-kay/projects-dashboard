@@ -1,0 +1,14 @@
+<nz-checkbox-wrapper style="width: 100%" (nzOnChange)="selectWidget($event)">
+  <div nz-row>
+    @for(widget of widgetList; track widget) {
+    <div nz-col nzSpan="24">
+      <label nz-checkbox [nzValue]="widget">{{ widget.name }}</label>
+    </div>
+    }
+  </div>
+</nz-checkbox-wrapper>
+
+<div class="pt-5 flex flex-row justify-end gap-2">
+  <button nz-button nzType="default" (click)="destroyModal()">Отмена</button>
+  <button nz-button nzType="primary" (click)="addWidgets()">Добавить</button>
+</div>

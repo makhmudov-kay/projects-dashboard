@@ -1,0 +1,38 @@
+<div class="flex flex-row justify-between items-center">
+  <h2 class="text-2xl font-medium">Виджеты</h2>
+  <button
+    nz-button
+    nzType="primary"
+    nzSize="large"
+    (click)="createComponentModal()"
+  >
+    Добавить виджет
+  </button>
+</div>
+
+<nz-divider></nz-divider>
+
+@if (!items.length) {
+<div
+  class="drag-list"
+  cdkDropListOrientation="mixed"
+  cdkDropList
+  (cdkDropListDropped)="drop($event)"
+>
+  @for (info of items; track info) {
+  <div
+    cdkDrag
+    class="drag-box"
+    [style.width.%]="info.width"
+    [style.height.px]="info.height"
+  >
+    <app-widget [value]="info.name"></app-widget>
+    <div class="resize-handle" (mousedown)="onResizeStart($event, info)"></div>
+  </div>
+  }
+</div>
+} @else {
+<div class="flex items-center justify-center h-full">
+  <nz-result nzStatus="404" nzTitle="Виджеты не добавлены"> </nz-result>
+</div>
+}
