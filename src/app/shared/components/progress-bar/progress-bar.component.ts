@@ -20,6 +20,16 @@ export class ProgressBarComponent {
     this.doughnutChartData.datasets[0].data = v;
   }
 
+  private _displayLegend!: boolean;
+  public get displayLegend(): boolean {
+    return this._displayLegend;
+  }
+  @Input()
+  public set displayLegend(v: boolean) {
+    this._displayLegend = v;
+    this.doughnutChartOptions.plugins.legend.display = v;
+  }
+
   public doughnutChartLabels: string[] = ['Завершенные задачи', 'Всего задач'];
   public doughnutChartData: ChartData<'doughnut'> = {
     labels: this.doughnutChartLabels,
@@ -31,7 +41,7 @@ export class ProgressBarComponent {
     responsive: true,
     plugins: {
       legend: {
-        display: false, // Отключает отображение легенды
+        display: this.displayLegend,
       },
     },
   };

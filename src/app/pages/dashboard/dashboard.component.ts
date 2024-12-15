@@ -45,7 +45,6 @@ export class DashboardComponent implements OnInit {
       .pipe(takeUntil(this.destroy$))
       .subscribe((params) => {
         this.project = this.projects.find((p) => p.id === +params['id'])!;
-        console.log(this.project);
       });
   }
 }

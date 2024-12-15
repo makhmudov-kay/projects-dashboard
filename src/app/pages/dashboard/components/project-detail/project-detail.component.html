@@ -12,22 +12,34 @@
 
 <nz-divider></nz-divider>
 
-@if (!items.length) {
+@if (projectWidgets.length) {
 <div
   class="drag-list"
   cdkDropListOrientation="mixed"
   cdkDropList
   (cdkDropListDropped)="drop($event)"
 >
-  @for (info of items; track info) {
+  @for (widget of projectWidgets; track widget.type) {
   <div
     cdkDrag
-    class="drag-box"
-    [style.width.%]="info.width"
-    [style.height.px]="info.height"
+    class="drag-box relative"
+    [style.width.%]="widget.width"
+    [style.height.px]="widget.height"
   >
-    <app-widget [value]="info.name"></app-widget>
-    <div class="resize-handle" (mousedown)="onResizeStart($event, info)"></div>
+    <app-widget [widget]="widget" [projectData]="projectData"></app-widget>
+    <div
+      class="resize-handle"
+      (mousedown)="onResizeStart($event, widget)"
+    ></div>
+
+    <button
+      (click)="removeWidget(widget.type, projectData.id, projectWidgets)"
+      nz-button
+      nzType="default"
+      class="absolute top-[12px] right-[20px]"
+    >
+      <span nz-icon nzType="delete" nzTheme="outline"></span>
+    </button>
   </div>
   }
 </div>

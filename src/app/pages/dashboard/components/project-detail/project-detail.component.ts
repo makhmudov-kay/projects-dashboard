@@ -1,9 +1,4 @@
-import {
-  Component,
-  HostListener,
-  OnInit,
-  ViewContainerRef,
-} from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { WidgetComponent } from '../../../../shared/components/widget/widget.component';
 import {
   CdkDragDrop,
@@ -14,16 +9,16 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzResultModule } from 'ng-zorro-antd/result';
-import {
-  NzModalRef,
-  NzModalService,
-  NZ_MODAL_DATA,
-  NzModalModule,
-} from 'ng-zorro-antd/modal';
+import { NzModalService } from 'ng-zorro-antd/modal';
 import { AddWidgetModalComponent } from '../add-widget-modal/add-widget-modal.component';
 import { ActivatedRoute } from '@angular/router';
 import { NgDestroy } from '../../../../shared/services/ng-destroy.service';
 import { takeUntil } from 'rxjs';
+import { WidgetService } from '../../services/widget.service';
+import { Widgets, WidgetTypes } from '../../models/project-widget.model';
+import { ResizeService } from '../../services/resize.service';
+import { ProjectService } from '../../services/project.service';
+import { Project } from '../../models/project.model';
 
 @Component({
   selector: 'app-project-detail',
@@ -41,48 +36,78 @@ import { takeUntil } from 'rxjs';
   providers: [NzModalService, NgDestroy],
 })
 export class ProjectDetailComponent implements OnInit {
-  items = [
-    { name: 'Блок 1', width: 100, height: 100 },
-    { name: 'Блок 2', width: 100, height: 100 },
-    { name: 'Блок 3', width: 100, height: 100 },
-  ];
-
-  widgetList = [
-    { type: 'progress', name: 'Виджет - Прогресс выполнения' },
-    { type: 'task_caunt', name: 'Виджет - Количество задач' },
-    { type: 'deadline', name: 'Виджет - Сроки завершения' },
-  ];
-
   projectId!: number;
+  projectData!: Project;
+  projectWidgets!: Widgets[];
+  widgetList: Widgets[] = [
+    {
+      type: 'progress',
+      name: 'Виджет - Прогресс выполнения',
+      width: 100,
+      height: 180,
+    },
+    {
+      type: 'task_caunt',
+      name: 'Виджет - Количество задач',
+      width: 100,
+      height: 180,
+    },
+    {
+      type: 'deadline',
+      name: 'Виджет - Сроки завершения',
+      width: 100,
+      height: 180,
+    },
+  ];
 
   constructor(
     private modal: NzModalService,
-    private viewContainerRef: ViewContainerRef,
     private route: ActivatedRoute,
-    private destroy$: NgDestroy
+    private destroy$: NgDestroy,
+    private widget$: WidgetService,
+    private resizeService: ResizeService,
+    private project$: ProjectService
   ) {
     this.route.queryParams
       .pipe(takeUntil(this.destroy$))
       .subscribe((params) => {
         this.projectId = +params['id'];
+        this.projectWidgets = this.widget$.getProjectWidgets(this.projectId);
+        this.getProjectById(this.projectId);
       });
   }
 
-  createComponentModal(): void {
-    this.widgetList = this.widgetList.map((item) => {
-      return {
-        ...item,
-        projectId: this.projectId,
-      };
+  private getProjectById(projectId: number) {
+    this.project$
+      .getProjects()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((project) => {
+        this.projectData = project.filter((p) => p.id === projectId)[0];
+      });
+  }
+
+  ngOnInit(): void {
+    this.widget$.storage$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.projectWidgets = this.widget$.getProjectWidgets(this.projectId);
     });
+  }
+
+  createComponentModal(): void {
+    const projectWidgets = this.widget$.getWidgetsFromStorage();
+    const updatedWidgetList = this.widgetList.map((widget) => ({
+      ...widget,
+      projectId: this.projectId,
+      checked: projectWidgets.some(
+        (project) =>
+          project.projectId === this.projectId &&
+          project.widgetList.some((w) => w.type === widget.type)
+      ),
+    }));
 
     this.modal.create<AddWidgetModalComponent>({
       nzTitle: 'Список виджетов',
       nzContent: AddWidgetModalComponent,
-      nzViewContainerRef: this.viewContainerRef,
-      nzData: {
-        widgetList: this.widgetList,
-      },
+      nzData: { widgetList: updatedWidgetList },
       nzWidth: 300,
       nzFooter: null,
       nzClosable: false,
@@ -90,52 +115,42 @@ export class ProjectDetailComponent implements OnInit {
     });
   }
 
-  addSelectedWidget(addSelectedWidget: any) {
-    console.log(addSelectedWidget);
+  removeWidget(
+    widgetType: WidgetTypes,
+    projectId: number,
+    projectWidgets: Widgets[]
+  ) {
+    this.widget$.updateProjectWidgets(projectId, projectWidgets, widgetType);
   }
 
-  ngOnInit(): void {
-    console.log(`12`);
+  drop(event: CdkDragDrop<Widgets[]>): void {
+    moveItemInArray(
+      this.projectWidgets,
+      event.previousIndex,
+      event.currentIndex
+    );
   }
 
-  resizing = false;
-  currentBox: any = null;
-  initialWidth = 0;
-  startX = 0;
-
-  drop(event: CdkDragDrop<string[]> | any) {
-    if (!this.resizing) {
-      moveItemInArray(this.items, event.previousIndex, event.currentIndex);
-    }
-  }
-
-  onResizeStart(event: MouseEvent, box: any) {
-    this.resizing = true;
-    this.currentBox = box;
-    this.startX = event.clientX;
-    this.initialWidth = box.width;
-    event.stopPropagation();
+  onResizeStart(event: MouseEvent, widget: Widgets): void {
+    this.resizeService.startResize(event, widget);
   }
 
   @HostListener('window:mousemove', ['$event'])
-  onResize(event: MouseEvent) {
-    if (this.resizing && this.currentBox) {
-      const parentWidth = (document.querySelector('.drag-list') as HTMLElement)
-        ?.clientWidth;
-
-      if (parentWidth) {
-        const delta = event.clientX - this.startX;
-        const deltaPercent = (delta / parentWidth) * 100;
-        let newWidth = this.initialWidth + deltaPercent;
-        newWidth = Math.max(10, Math.min(newWidth, 100));
-        this.currentBox.width = newWidth;
+  onResize(event: MouseEvent): void {
+    const parentWidth = (document.querySelector('.drag-list') as HTMLElement)
+      ?.clientWidth;
+    if (parentWidth) {
+      const newWidth = this.resizeService.onResize(event, parentWidth);
+      if (newWidth !== null) {
+        this.projectWidgets.find(
+          (w) => w.type === this.resizeService['currentBox']?.type
+        )!.width = newWidth;
       }
     }
   }
 
   @HostListener('window:mouseup')
-  onResizeEnd() {
-    this.resizing = false;
-    this.currentBox = null;
+  onResizeEnd(): void {
+    this.resizeService.endResize();
   }
 }

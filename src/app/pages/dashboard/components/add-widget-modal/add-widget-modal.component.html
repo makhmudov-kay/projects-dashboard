@@ -2,7 +2,7 @@
   <div nz-row>
     @for(widget of widgetList; track widget) {
     <div nz-col nzSpan="24">
-      <label nz-checkbox [nzValue]="widget">{{ widget.name }}</label>
+      <label nz-checkbox [nzValue]="widget" [nzChecked]="widget.checked">{{ widget.name }}</label>
     </div>
     }
   </div>

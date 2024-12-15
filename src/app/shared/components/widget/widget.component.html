@@ -1,3 +1,40 @@
-<div>
-  {{ value }}
+<div class="flex items-center w-full grow">
+  @switch (widget.type ) { @case ('progress') {
+  <div class="flex items-center grow">
+    <app-progress-bar
+      [data]="[projectData.tasksCompleted, projectData.tasksTotal]"
+      [displayLegend]="true"
+    ></app-progress-bar>
+
+    <div>
+      <h3 class="text-gray-600 text-5xl font-semibold">Мой прогресс бар</h3>
+    </div>
+  </div>
+  } @case('deadline') {
+  <div class="flex flex-row justify-between items-center grow">
+    <div>
+      <h3 class="text-gray-400 font-medium text-4xl">Дата начала</h3>
+      <code class="text-5xl text-black">{{ projectData.startDate }}</code>
+    </div>
+    <div>
+      <h3 class="text-gray-400 font-medium text-4xl">Дата начала</h3>
+      <code class="text-5xl text-black">{{ projectData.endDate }}</code>
+    </div>
+  </div>
+  } @case ('task_caunt') {
+  <div class="flex flex-row items-start justify-around grow">
+    <div>
+      <h4 class="text-gray-500 font-medium text-5xl">Завершено задач</h4>
+      <span class="text-black font-bold text-6xl">{{
+        projectData.tasksCompleted
+      }}</span>
+    </div>
+    <div>
+      <h4 class="text-gray-500 font-medium text-5xl">Всего задач</h4>
+      <span class="text-black font-bold text-6xl">{{
+        projectData.tasksTotal
+      }}</span>
+    </div>
+  </div>
+  } }
 </div>

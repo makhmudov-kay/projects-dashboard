@@ -19,6 +19,7 @@
     "@angular/platform-browser": "^18.2.0",
     "@angular/platform-browser-dynamic": "^18.2.0",
     "@angular/router": "^18.2.0",
+    "@ngxs/store": "^18.1.6",
     "angular-resizable-element": "^7.0.2",
     "chart.js": "^4.3.0",
     "ng-zorro-antd": "^18.2.1",

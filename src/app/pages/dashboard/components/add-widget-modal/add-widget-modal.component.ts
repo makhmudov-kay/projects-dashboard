@@ -1,8 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NZ_MODAL_DATA, NzModalRef } from 'ng-zorro-antd/modal';
-import { LocalStorageUtilit } from '../../../../shared/utils/local-storage.utilit';
+import { WidgetMapperService } from '../../services/widget-mapper.service';
+import { WidgetService } from '../../services/widget.service';
+import { Widgets } from '../../models/project-widget.model';
 
 @Component({
   selector: 'app-add-widget-modal',
@@ -10,13 +12,25 @@ import { LocalStorageUtilit } from '../../../../shared/utils/local-storage.utili
   standalone: true,
   imports: [NzCheckboxModule, NzButtonModule],
 })
-export class AddWidgetModalComponent {
-  selectedWidgets!: any[];
+export class AddWidgetModalComponent implements OnInit {
+  selectedWidgets: Widgets[] = [];
 
-  readonly #modal = inject(NzModalRef);
   readonly widgetList = inject(NZ_MODAL_DATA).widgetList;
+  readonly #modal = inject(NzModalRef);
+  private widgetService = inject(WidgetService);
+  private widgetMapperService = inject(WidgetMapperService);
 
-  selectWidget(value: any[]): void {
+  ngOnInit(): void {
+    this.setInitialSelectedWidgets();
+  }
+
+  setInitialSelectedWidgets(): void {
+    this.selectedWidgets = this.widgetList.filter(
+      (widget: any) => widget.checked
+    );
+  }
+
+  selectWidget(value: Widgets[]): void {
     this.selectedWidgets = value;
   }
 
@@ -24,47 +38,17 @@ export class AddWidgetModalComponent {
     this.#modal.destroy();
   }
 
-  addWidgets() {
-    const projectWidgets = LocalStorageUtilit.get('projectWidgets')
-      ? JSON.parse(LocalStorageUtilit.get('projectWidgets')!)
-      : [];
+  addWidgets(): void {
+    const projectId = this.widgetList[0]?.projectId;
+    const processedWidgets = this.widgetMapperService.excludeKeysFromWidgets(
+      this.selectedWidgets,
+      ['checked']
+    );
 
-    if (projectWidgets.length) {
-      if (
-        projectWidgets.includes(
-          (item: any) => item.projectId === this.widgetList[0].projectId
-        )
-      ) {
-      }
-      const data = projectWidgets.map((item: any) => {
-        if (item.projectId === this.widgetList[0].projectId) {
-          const clearWidgetObj = this.excludeProjectIdKey();
-          item.widgetList.push(...clearWidgetObj);
-        }
-        return item;
-      });
-      LocalStorageUtilit.set('projectWidgets', JSON.stringify(data));
-    } else {
-      const data = [];
-      const createWidgetSource = {
-        projectId: this.widgetList[0].projectId,
-        widgetList: this.excludeProjectIdKey(),
-      };
-      data.push(createWidgetSource);
-      LocalStorageUtilit.set('projectWidgets', JSON.stringify(data));
+    if (projectId) {
+      this.widgetService.updateProjectWidgets(projectId, processedWidgets);
     }
 
     this.destroyModal();
-  }
-
-  private excludeProjectIdKey() {
-    return this.selectedWidgets.map((item) => {
-      delete item.projectId;
-      const list = item;
-      delete list.projectId;
-      return {
-        ...list,
-      };
-    });
   }
 }
